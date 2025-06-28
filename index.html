@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, height=device-height">
+    <title>NUSH Timetable Viewer</title>
+    <link href="./style.css" rel="stylesheet">
+</head>
+<body>
+    <h1>NUSH Timetable Viewer</h1>
+    <form id="mainform">
+        <span class="nowrap">
+            Year:
+            <input type="number" id="yearInput" value="2025" disabled required>
+        </span>
+
+        <span class="nowrap">
+            Semester:
+            <input type="radio" value="1" name="semInput" id="sem1" required checked disabled>
+            <label for="sem1">1</label>
+            <input type="radio" value="2" name="semInput" id="sem2" disabled>
+            <label for="sem1">2</label>
+        </span>
+        
+        <span class="nowrap">
+            Class:
+            <input type="number" id="classInput" required autofocus>
+        </span>
+
+        <br>
+        <button id="goBtn" class="bold" type="submit">Load Timetable</button>
+    </form>
+    Timetable for: <span id="class">...</span>
+    <main>
+        <div class="table-holder">
+            <table id="table">
+                <thead>
+                    <tr>
+                        <th>Day</th>
+                        <th>1</th>
+                        <th>2</th>
+                        <th>3</th>
+                        <th>4</th>
+                        <th>5</th>
+                        <th>6</th>
+                        <th>7</th>
+                        <th>8</th>
+                        <th>9</th>
+                        <th>10</th>
+                        <th>11</th>
+                        <th>12</th>
+                        <th>13</th>
+                        <th>14</th>
+                        <th>15</th>
+                        <th>16</th>
+                        <th>17</th>
+                        <th>18</th>
+                        <th>19</th>
+                        <th>20</th>
+                    </tr>
+                </thead>
+
+                <tbody id="main-table-content">
+                    <tr>
+                        <td>Mo</td>
+                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                    </tr>
+                    <tr>
+                        <td>Tu</td>
+                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                    </tr>
+                    <tr>
+                        <td>We</td>
+                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                    </tr>
+                    <tr>
+                        <td>Th</td>
+                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                    </tr>
+                    <tr>
+                        <td>Fr</td>
+                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script src="./script.js" type="module"></script>
+</body>
+</html>
