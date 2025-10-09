@@ -7,7 +7,7 @@ const whichSem = () => sem1Input.checked ? 1 : (sem2Input.checked ? 2 : null);
 const classInput = document.querySelector("#classInput");
 
 const getData = async (day, year, sem) => {
-    let data = await fetch(`https://cdn.jsdelivr.net/gh/gohjy/nush-timetable-data@latest/${year}s${sem}/day/${day}.json`).catch((e) => {
+    let data = await fetch(`https://cdn.jsdelivr.net/gh/gohjy/nush-timetable-data@gohjy%2Fv3/v3/dist/${year}s${sem}/day/${day}.subject.json`).catch((e) => {
         alert("Your network isn't good!");
         throw e;
     });
@@ -15,9 +15,6 @@ const getData = async (day, year, sem) => {
         alert("The data for the timetable cannot be found!");
         throw e;
     });
-
-    console.log("DATA JSON")
-    console.log(dataJson)
 
     if (dataJson) return dataJson;
     else throw new Error("getData went wrong");
@@ -35,14 +32,9 @@ const putData = async (year, sem) => {
 
     while (data.length !== 0) data.pop();
     for (let i=1; i<=5; i++) {
-        console.log("EE" + i)
         data.push(await getData(i, year, sem));
     }
 }
-
-// await putData(new Date().getFullYear(), Math.floor((new Date().getMonth()+5)/6));
-
-console.log(data);
 
 const remap = {
     "INTHUM": "Hum",
@@ -87,7 +79,7 @@ for (let i=0; i<5; i++) {
 
 async function loadTimetable(classId, year, sem) {
     await putData(year, sem);
-    console.log(data);
+
     for (let i=0; i<5; i++) {
         const row = gridBoxes[i];
         const rowData = data[i].data.find(x => x.class === classId);
@@ -95,25 +87,22 @@ async function loadTimetable(classId, year, sem) {
             alert("Sorry, could not load table.")
             return;
         }
-        console.log(rowData);
-        for (let j=0; j<20; j++) {
-            const value = rowData[`p${j + 1}`].subject.trim();
-            row[j].textContent = remap[value] || value.replaceAll(",","/");
+        
+        for (let subject of rowData.subjects) {
+            let j = subject.start.oneIndex - 1;
 
-            let colspan = 1;
-            let len = 1;
-            console.log(value === rowData[`p${j + 1 + len}`]?.subject);
-            while (value === rowData[`p${j + 1 + len}`]?.subject && row.length + 1> j+1+len) {
-                if (colspan >= config[value]?.maxlength) break;
-                console.log(0);
-                colspan++;
-                row[j + len].classList.add("invisible");
-                row[j + len].textContent = row[j].textContent;
-                len++;
-            }
-            row[j].setAttribute("colspan", colspan);
+            const value = Array.from(new Set(subject.lessons.map(x => remap[x.subject] || x.subject))).join("/");
+            console.log(value)
+            row[j].textContent = value;
+
+            const duration = (value.trim() === "") ? 1 : subject.duration;
+
             row[j].classList.remove("invisible");
-            j += (len - 1);
+            row[j].setAttribute("colspan", duration);
+
+            for (let i=1; (i<duration) && (i<row.length); i++) {
+                row[j + i].classList.add("invisible");
+            }
         }
     }
 
@@ -122,10 +111,6 @@ async function loadTimetable(classId, year, sem) {
 }
 
 const evHandler = async (ev) => {
-    // Manually override for now
-    yearInput.value = 2025;
-    sem1Input.checked = true;
-    
     let classNum = +classInput.value;
     if (!classNum || classNum % 1 !== 0 || classNum % 100 > 7 || (classNum % 100 > 6 && classNum < 301) || classNum % 100 === 0 || classNum > 607 || classNum < 101) {
         alert("Invalid class!");
@@ -140,15 +125,6 @@ const evHandler = async (ev) => {
     try { await loadTimetable(classNum, +yearInput.value, whichSem()); }
     catch(e) { void e; }
 }
-
-/* classInput.addEventListener("change", evHandler);
-yearInput.addEventListener("change", evHandler);
-sem1Input.addEventListener("change", evHandler);
-sem2Input.addEventListener("change", evHandler);
-
-document.querySelector("#goBtn").addEventListener("click", () => {
-    document.querySelector("#classInput").dispatchEvent(new InputEvent("change"));
-}); */
 
 document.querySelector("#mainform").addEventListener("submit", (ev) => {
     ev.preventDefault();
