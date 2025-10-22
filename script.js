@@ -118,7 +118,7 @@ async function loadTimetable(classId, year, sem) {
             const value = Array.from(new Set(subject.lessons.map(x => remap[x.subject] || x.subject))).join("/");
             row[j].textContent = value;
 
-            const duration = (value.trim() === "") ? 1 : subject.duration;
+            const duration = subject.duration ?? 1;
 
             row[j].classList.remove("invisible");
             row[j].setAttribute("colspan", duration);
