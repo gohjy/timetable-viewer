@@ -6,13 +6,15 @@ const sem2Input = document.querySelector("#sem2");
 const whichSem = () => sem1Input.checked ? 1 : (sem2Input.checked ? 2 : null);
 const classInput = document.querySelector("#classInput");
 
-const getData = async (day, year, sem) => {
-    let data = await fetch(`https://cdn.jsdelivr.net/gh/gohjy/nush-timetable-data@gohjy%2Fv3/v3/dist/${year}s${sem}/day/${day}.subject.json`).catch((e) => {
-        alert("Your network isn't good!");
+let devMode = false;
+
+const getFetchUrl = ({day, year, sem}) => `https://cdn.jsdelivr.net/gh/gohjy/nush-timetable-data@gohjy%2Fv3/v3/dist/${year}s${sem}/day/${day}.subject.json`;
+
+const getData = async (url) => {
+    let data = await fetch(url).catch((e) => {
         throw e;
     });
     let dataJson = await data.json().catch((e) => {
-        alert("The data for the timetable cannot be found!");
         throw e;
     });
 
@@ -30,9 +32,25 @@ const putData = async (year, sem) => {
     metadata.year = year;
     metadata.sem = sem;
 
-    while (data.length !== 0) data.pop();
-    for (let i=1; i<=5; i++) {
-        data.push(await getData(i, year, sem));
+    data.splice(0, data.length);
+
+    const promiseArray = [];
+
+    for (let day=1; day<=5; day++) {
+        const fetchUrl = getFetchUrl({ day, year, sem });
+        promiseArray.push(getData(fetchUrl));
+    }
+
+    const promiseResults = await Promise.allSettled(promiseArray);
+
+    for (let { status, value, reason } of promiseResults) {
+        if (status === "rejected") {
+            // something went wrong!
+            console.error(reason);
+            data.push(null);
+        } else {
+            data.push(value);
+        }
     }
 }
 
@@ -81,10 +99,20 @@ async function loadTimetable(classId, year, sem) {
     await putData(year, sem);
 
     for (let i=0; i<5; i++) {
+        if (data[i] === null) {
+            const firstCell = gridBoxes[i][0];
+            firstCell.textContent = "Could not load data for this day.";
+            firstCell.setAttribute("colspan", gridBoxes[i].length);
+            for (let cell of gridBoxes[i].slice(1)) {
+                cell.classList.add("invisible");
+            }
+            return;
+        }
+
         const row = gridBoxes[i];
-        const rowData = data[i].data.find(x => x.class === classId);
+        const rowData = data[i]?.data?.find(x => x.class === classId);
         if (!rowData) {
-            alert("Sorry, could not load table.")
+            alert("Sorry, could not load table.");
             return;
         }
         
