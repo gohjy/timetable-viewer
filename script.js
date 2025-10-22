@@ -116,7 +116,6 @@ async function loadTimetable(classId, year, sem) {
             let j = subject.start.oneIndex - 1;
 
             const value = Array.from(new Set(subject.lessons.map(x => remap[x.subject] || x.subject))).join("/");
-            console.log(value)
             row[j].textContent = value;
 
             const duration = (value.trim() === "") ? 1 : subject.duration;
@@ -130,11 +129,14 @@ async function loadTimetable(classId, year, sem) {
         }
     }
 
-    document.querySelector("#class").textContent = `${classId}, ${year} Sem ${sem}`;
+    let displayText = `${classId}, ${year} Sem ${sem}`;
+    if (devMode) displayText += " (Dev mode enabled)";
+
+    document.querySelector("#class").textContent = displayText;
     isLoaded = true;
 }
 
-const evHandler = async (ev) => {
+const evHandler = async () => {
     let classNum = +classInput.value;
     if (!classNum || classNum % 1 !== 0 || classNum % 100 > 7 || (classNum % 100 > 6 && classNum < 301) || classNum % 100 === 0 || classNum > 607 || classNum < 101) {
         alert("Invalid class!");
@@ -149,7 +151,7 @@ const evHandler = async (ev) => {
     try {
         const sem = whichSem();
         const year = +yearInput.value;
-        await putData(year, sem);
+        if (!devMode) await putData(year, sem);
         await loadTimetable(classNum, year, sem); 
     } catch {}
 }
@@ -162,12 +164,13 @@ document.querySelector("#mainform").addEventListener("submit", (ev) => {
 /* *** DEVMODE *** */
 let devMode = false;
 document.querySelector("#devmode-control").addEventListener("change", (ev) => {
-    document.querySelector(".devmode").classList.toggle("enabled", ev.currentTarget.checked);
+    devMode = ev.currentTarget.checked;
+    document.querySelector(".devmode").classList.toggle("enabled", devMode);
 });
 (() => {
     const devmodeFileInput = document.querySelector("#devmode-file-input");
     const devmodeFileInputBtn = document.querySelector("#devmode-file-input-submit");
-    devmodeFileInputBtn.addEventListener("click", () => {
+    devmodeFileInputBtn.addEventListener("click", async () => {
         const file = devmodeFileInput.files[0];
         if (!file) {
             alert("No file provided!");
@@ -179,7 +182,7 @@ document.querySelector("#devmode-control").addEventListener("change", (ev) => {
             if (
                 !Array.isArray(json)
                 || (json.length !== 5)
-                || json.every(item => item && (typeof item === "object"))
+                || !json.every(item => item && (typeof item === "object"))
             ) throw new Error("Expected array of 5 objects");
             return json;
         })().catch(err => {
