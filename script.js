@@ -6,8 +6,6 @@ const sem2Input = document.querySelector("#sem2");
 const whichSem = () => sem1Input.checked ? 1 : (sem2Input.checked ? 2 : null);
 const classInput = document.querySelector("#classInput");
 
-let devMode = false;
-
 const getFetchUrl = ({day, year, sem}) => `https://cdn.jsdelivr.net/gh/gohjy/nush-timetable-data@gohjy%2Fv3/v3/dist/${year}s${sem}/day/${day}.subject.json`;
 
 const getData = async (url) => {
@@ -96,8 +94,6 @@ for (let i=0; i<5; i++) {
 }
 
 async function loadTimetable(classId, year, sem) {
-    await putData(year, sem);
-
     for (let i=0; i<5; i++) {
         if (data[i] === null) {
             const firstCell = gridBoxes[i][0];
@@ -150,14 +146,56 @@ const evHandler = async (ev) => {
         return;
     };
 
-    try { await loadTimetable(classNum, +yearInput.value, whichSem()); }
-    catch(e) { void e; }
+    try {
+        const sem = whichSem();
+        const year = +yearInput.value;
+        await putData(year, sem);
+        await loadTimetable(classNum, year, sem); 
+    } catch {}
 }
 
 document.querySelector("#mainform").addEventListener("submit", (ev) => {
     ev.preventDefault();
     evHandler();
-})
+});
+
+/* *** DEVMODE *** */
+let devMode = false;
+document.querySelector("#devmode-control").addEventListener("change", (ev) => {
+    document.querySelector(".devmode").classList.toggle("enabled", ev.currentTarget.checked);
+});
+(() => {
+    const devmodeFileInput = document.querySelector("#devmode-file-input");
+    const devmodeFileInputBtn = document.querySelector("#devmode-file-input-submit");
+    devmodeFileInputBtn.addEventListener("click", () => {
+        const file = devmodeFileInput.files[0];
+        if (!file) {
+            alert("No file provided!");
+            return;
+        }
+        const contents = await (async () => {
+            const filetext = await file.text();
+            const json = JSON.parse(filetext);
+            if (
+                !Array.isArray(json)
+                || (json.length !== 5)
+                || json.every(item => item && (typeof item === "object"))
+            ) throw new Error("Expected array of 5 objects");
+            return json;
+        })().catch(err => {
+            alert(`Error: ${err}`);
+            return null;
+        });
+        if (!contents) return;
+        
+        data.splice(0, data.length);
+        data.push(...contents);
+
+        alert("Successfully loaded data! Use Load Timetable button to show!");
+    })
+})();
+/* *** END DEVMODE *** */
+
 
 const urlObj = new URL(location.href).searchParams;
 
