@@ -6,7 +6,7 @@ const sem2Input = document.querySelector("#sem2");
 const whichSem = () => sem1Input.checked ? 1 : (sem2Input.checked ? 2 : null);
 const classInput = document.querySelector("#classInput");
 
-const getFetchUrl = ({day, year, sem}) => `https://cdn.jsdelivr.net/gh/gohjy/nush-timetable-data@gohjy%2Fv3/v3/dist/${year}s${sem}/day/${day}.subject.json`;
+const getFetchUrl = ({day, year, sem}) => `https://cdn.jsdelivr.net/gh/gohjy/nush-timetable-data@main/v3/dist/${year}s${sem}/day/${day}.subject.json`;
 
 const getData = async (url) => {
     let data = await fetch(url).catch((e) => {
