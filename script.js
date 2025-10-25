@@ -95,9 +95,13 @@ for (let i=0; i<5; i++) {
 
 async function loadTimetable(classId, year, sem) {
     for (let i=0; i<5; i++) {
-        if (data[i] === null) {
+        const hasData = data[i] !== null;
+
+        const rowData = !hasData ? null : data[i]?.data?.find(x => x.class === classId);
+
+        if (!rowData) {
             const firstCell = gridBoxes[i][0];
-            firstCell.textContent = "Could not load data for this day.";
+            firstCell.textContent = hasData ? "The data for this day does not include this class." : "Could not load data for this day.";
             firstCell.setAttribute("colspan", gridBoxes[i].length);
             for (let cell of gridBoxes[i].slice(1)) {
                 cell.classList.add("invisible");
@@ -106,11 +110,6 @@ async function loadTimetable(classId, year, sem) {
         }
 
         const row = gridBoxes[i];
-        const rowData = data[i]?.data?.find(x => x.class === classId);
-        if (!rowData) {
-            alert("Sorry, could not load table.");
-            return;
-        }
         
         for (let subject of rowData.subjects) {
             let j = subject.start.oneIndex - 1;
