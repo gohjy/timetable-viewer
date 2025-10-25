@@ -11,14 +11,14 @@
     <form id="mainform">
         <span class="nowrap">
             Year:
-            <input type="number" id="yearInput" value="2025" disabled required>
+            <input type="number" id="yearInput" value="2025" required>
         </span>
 
         <span class="nowrap">
             Semester:
-            <input type="radio" value="1" name="semInput" id="sem1" required checked disabled>
+            <input type="radio" value="1" name="semInput" id="sem1" required>
             <label for="sem1">1</label>
-            <input type="radio" value="2" name="semInput" id="sem2" disabled>
+            <input type="radio" value="2" name="semInput" id="sem2" required>
             <label for="sem1">2</label>
         </span>
         
@@ -85,6 +85,18 @@
             </table>
         </div>
     </main>
+
+    <div class="small">
+        <input type="checkbox" id="devmode-control">
+        <label for="devmode-control">Developer mode (use with caution)</label>
+    
+        <div class="devmode">
+            <label for="devmode-file-input">Upload custom file:</label>
+            <input type="file" id="devmode-file-input" accept=".json,application/json">
+            <br>
+            <button id="devmode-file-input-submit">use file</button>
+        </div>
+    </div>
 
     <script src="./script.js" type="module"></script>
 </body>

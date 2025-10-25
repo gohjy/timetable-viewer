@@ -6,18 +6,15 @@ const sem2Input = document.querySelector("#sem2");
 const whichSem = () => sem1Input.checked ? 1 : (sem2Input.checked ? 2 : null);
 const classInput = document.querySelector("#classInput");
 
-const getData = async (day, year, sem) => {
-    let data = await fetch(`https://cdn.jsdelivr.net/gh/gohjy/nush-timetable-data@latest/${year}s${sem}/day/${day}.json`).catch((e) => {
-        alert("Your network isn't good!");
+const getFetchUrl = ({day, year, sem}) => `https://cdn.jsdelivr.net/gh/gohjy/nush-timetable-data@main/v3/dist/${year}s${sem}/day/${day}.subject.json`;
+
+const getData = async (url) => {
+    let data = await fetch(url).catch((e) => {
         throw e;
     });
     let dataJson = await data.json().catch((e) => {
-        alert("The data for the timetable cannot be found!");
         throw e;
     });
-
-    console.log("DATA JSON")
-    console.log(dataJson)
 
     if (dataJson) return dataJson;
     else throw new Error("getData went wrong");
@@ -33,16 +30,27 @@ const putData = async (year, sem) => {
     metadata.year = year;
     metadata.sem = sem;
 
-    while (data.length !== 0) data.pop();
-    for (let i=1; i<=5; i++) {
-        console.log("EE" + i)
-        data.push(await getData(i, year, sem));
+    data.splice(0, data.length);
+
+    const promiseArray = [];
+
+    for (let day=1; day<=5; day++) {
+        const fetchUrl = getFetchUrl({ day, year, sem });
+        promiseArray.push(getData(fetchUrl));
+    }
+
+    const promiseResults = await Promise.allSettled(promiseArray);
+
+    for (let { status, value, reason } of promiseResults) {
+        if (status === "rejected") {
+            // something went wrong!
+            console.error(reason);
+            data.push(null);
+        } else {
+            data.push(value);
+        }
     }
 }
-
-// await putData(new Date().getFullYear(), Math.floor((new Date().getMonth()+5)/6));
-
-console.log(data);
 
 const remap = {
     "INTHUM": "Hum",
@@ -86,46 +94,49 @@ for (let i=0; i<5; i++) {
 }
 
 async function loadTimetable(classId, year, sem) {
-    await putData(year, sem);
-    console.log(data);
     for (let i=0; i<5; i++) {
-        const row = gridBoxes[i];
-        const rowData = data[i].data.find(x => x.class === classId);
-        if (!rowData) {
-            alert("Sorry, could not load table.")
+        if (data[i] === null) {
+            const firstCell = gridBoxes[i][0];
+            firstCell.textContent = "Could not load data for this day.";
+            firstCell.setAttribute("colspan", gridBoxes[i].length);
+            for (let cell of gridBoxes[i].slice(1)) {
+                cell.classList.add("invisible");
+            }
             return;
         }
-        console.log(rowData);
-        for (let j=0; j<20; j++) {
-            const value = rowData[`p${j + 1}`].subject.trim();
-            row[j].textContent = remap[value] || value.replaceAll(",","/");
 
-            let colspan = 1;
-            let len = 1;
-            console.log(value === rowData[`p${j + 1 + len}`]?.subject);
-            while (value === rowData[`p${j + 1 + len}`]?.subject && row.length + 1> j+1+len) {
-                if (colspan >= config[value]?.maxlength) break;
-                console.log(0);
-                colspan++;
-                row[j + len].classList.add("invisible");
-                row[j + len].textContent = row[j].textContent;
-                len++;
-            }
-            row[j].setAttribute("colspan", colspan);
+        const row = gridBoxes[i];
+        const rowData = data[i]?.data?.find(x => x.class === classId);
+        if (!rowData) {
+            alert("Sorry, could not load table.");
+            return;
+        }
+        
+        for (let subject of rowData.subjects) {
+            let j = subject.start.oneIndex - 1;
+
+            const value = Array.from(new Set(subject.lessons.map(x => remap[x.subject] || x.subject))).join("/");
+            row[j].textContent = value;
+
+            const duration = subject.duration ?? 1;
+
             row[j].classList.remove("invisible");
-            j += (len - 1);
+            row[j].setAttribute("colspan", duration);
+
+            for (let i=1; (i<duration) && (i<row.length); i++) {
+                row[j + i].classList.add("invisible");
+            }
         }
     }
 
-    document.querySelector("#class").textContent = `${classId}, ${year} Sem ${sem}`;
+    let displayText = `${classId}, ${year} Sem ${sem}`;
+    if (devMode) displayText += " (Dev mode enabled)";
+
+    document.querySelector("#class").textContent = displayText;
     isLoaded = true;
 }
 
-const evHandler = async (ev) => {
-    // Manually override for now
-    yearInput.value = 2025;
-    sem1Input.checked = true;
-    
+const evHandler = async () => {
     let classNum = +classInput.value;
     if (!classNum || classNum % 1 !== 0 || classNum % 100 > 7 || (classNum % 100 > 6 && classNum < 301) || classNum % 100 === 0 || classNum > 607 || classNum < 101) {
         alert("Invalid class!");
@@ -137,23 +148,57 @@ const evHandler = async (ev) => {
         return;
     };
 
-    try { await loadTimetable(classNum, +yearInput.value, whichSem()); }
-    catch(e) { void e; }
+    try {
+        const sem = whichSem();
+        const year = +yearInput.value;
+        if (!devMode) await putData(year, sem);
+        await loadTimetable(classNum, year, sem); 
+    } catch {}
 }
-
-/* classInput.addEventListener("change", evHandler);
-yearInput.addEventListener("change", evHandler);
-sem1Input.addEventListener("change", evHandler);
-sem2Input.addEventListener("change", evHandler);
-
-document.querySelector("#goBtn").addEventListener("click", () => {
-    document.querySelector("#classInput").dispatchEvent(new InputEvent("change"));
-}); */
 
 document.querySelector("#mainform").addEventListener("submit", (ev) => {
     ev.preventDefault();
     evHandler();
-})
+});
+
+/* *** DEVMODE *** */
+let devMode = false;
+document.querySelector("#devmode-control").addEventListener("change", (ev) => {
+    devMode = ev.currentTarget.checked;
+    document.querySelector(".devmode").classList.toggle("enabled", devMode);
+});
+(() => {
+    const devmodeFileInput = document.querySelector("#devmode-file-input");
+    const devmodeFileInputBtn = document.querySelector("#devmode-file-input-submit");
+    devmodeFileInputBtn.addEventListener("click", async () => {
+        const file = devmodeFileInput.files[0];
+        if (!file) {
+            alert("No file provided!");
+            return;
+        }
+        const contents = await (async () => {
+            const filetext = await file.text();
+            const json = JSON.parse(filetext);
+            if (
+                !Array.isArray(json)
+                || (json.length !== 5)
+                || !json.every(item => item && (typeof item === "object"))
+            ) throw new Error("Expected array of 5 objects");
+            return json;
+        })().catch(err => {
+            alert(`Error: ${err}`);
+            return null;
+        });
+        if (!contents) return;
+        
+        data.splice(0, data.length);
+        data.push(...contents);
+
+        alert("Successfully loaded data! Use Load Timetable button to show!");
+    })
+})();
+/* *** END DEVMODE *** */
+
 
 const urlObj = new URL(location.href).searchParams;
 
