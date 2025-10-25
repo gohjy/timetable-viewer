@@ -124,10 +124,21 @@ async function loadTimetable(classId, year, sem) {
             const duration = subject.duration ?? 1;
 
             row[j].classList.remove("invisible");
-            row[j].setAttribute("colspan", duration);
+            
+            const isAllFreePeriod = (subject.lessons?.length === 1) && (subject.lessons?.[0]?.subject === "FREE");
+            console.log(subject.lessons);
+            
+            row[j].setAttribute("colspan", isAllFreePeriod ? 1 : duration);
 
             for (let i=1; (i<duration) && (i<row.length); i++) {
-                row[j + i].classList.add("invisible");
+                const cell = row[j + i];
+                if (isAllFreePeriod) {
+                    cell.classList.remove("invisible");
+                    cell.setAttribute("colspan", 1);
+                    cell.textContent = remap["FREE"] || "FREE";
+                } else {
+                    row[j + i].classList.add("invisible");
+                }
             }
         }
     }
