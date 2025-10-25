@@ -102,7 +102,7 @@ async function loadTimetable(classId, year, sem) {
             for (let cell of gridBoxes[i].slice(1)) {
                 cell.classList.add("invisible");
             }
-            return;
+            continue;
         }
 
         const row = gridBoxes[i];
@@ -115,7 +115,11 @@ async function loadTimetable(classId, year, sem) {
         for (let subject of rowData.subjects) {
             let j = subject.start.oneIndex - 1;
 
-            const value = Array.from(new Set(subject.lessons.map(x => remap[x.subject] || x.subject))).join("/");
+            const names = subject.lessons?.map?.(
+                x => remap[x.subject] || x.subject || "?"
+            ) ?? ["?"];
+            const value = Array.from(new Set(names)).join("/");
+            
             row[j].textContent = value;
 
             const duration = subject.duration ?? 1;
