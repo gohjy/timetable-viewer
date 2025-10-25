@@ -115,12 +115,11 @@ async function loadTimetable(classId, year, sem) {
         for (let subject of rowData.subjects) {
             let j = subject.start.oneIndex - 1;
 
-            const names = subject.lessons?.map(
-                  x => remap[x.subject] || x.subject || "?"
-                ) ?? ["?"];
-                const value = Array.from(new Set(names)).join("/");
-            // I am not sure about this like i used weird cpp stuff but i can compile yay.
-            //cuz you see the original one set to "" which MIGHT look like the FREE blcok.
+            const names = subject.lessons?.map?.(
+                x => remap[x.subject] || x.subject || "?"
+            ) ?? ["?"];
+            const value = Array.from(new Set(names)).join("/");
+            
             row[j].textContent = value;
 
             const duration = subject.duration ?? 1;
